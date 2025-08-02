@@ -20,7 +20,7 @@ public class MessageService(ChatContext context) : MessageServiceProto.MessageSe
 
         await logTask;
 
-        return new() { Success = false };
+        return new() { Success = true };
     }
 
     public override async Task<MessageHistoryProto> GetMessageHistory(InteractionIdProto interactionIdProto, ServerCallContext context)
