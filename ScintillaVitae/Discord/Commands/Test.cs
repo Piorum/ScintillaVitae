@@ -1,3 +1,4 @@
+using System.Text;
 using NetCord;
 using NetCord.Rest;
 using NetCord.Services.ApplicationCommands;
@@ -8,6 +9,9 @@ namespace ScintillaVitae.Discord.Commands;
 
 public class Test : ApplicationCommandModule<ApplicationCommandContext>
 {
+
+    private static ulong count = 0;
+
     [SlashCommand("test", "Test")]
     public async Task TestCmdAsync()
     {
@@ -17,29 +21,44 @@ public class Test : ApplicationCommandModule<ApplicationCommandContext>
 
             var messageServiceClient = await GrpcClientFactory.GetMessageServiceClient();
 
-            var result = await messageServiceClient.StoreMessageAsync(new()
+            var storeResult = await messageServiceClient.StoreMessageAsync(new()
             {
                 InteractionId = new()
                 {
-                    ServerId = 1,
-                    ThreadId = 1
+                    ServerId = 0,
+                    ThreadId = 0
                 },
                 MessageContent = new()
                 {
-                    MessageRoll = Protos.Message.MessageRollProto.User,
-                    Content = "Hello",
-                    MessageId = 1,
+                    MessageRole = Protos.Message.MessageRoleProto.User,
+                    Content = "Hello World!",
+                    MessageId = count,
                     Timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeSeconds()
                 }
             });
+            count++;
 
-            if(result.Success)
-                await Context.Interaction.ModifyResponseAsync(message => message.WithContent("gRPC service returned true."));
+            if (storeResult.Success)
+            {
+                var result = await messageServiceClient.GetMessageHistoryAsync(new() { ServerId = 0, ThreadId = 0 });
+
+                List<string> messages = [];
+                foreach (var message in result.Messages)
+                {
+                    messages.Add($"{message.MessageId}:{message.MessageRole}:{message.Content}");
+                }
+
+                if (messages.Count > 0)
+                    await Context.Interaction.ModifyResponseAsync(message => message.WithContent(string.Join(" || ",messages)));
+                else
+                    await Context.Interaction.ModifyResponseAsync(message => message.WithContent("Messages was empty."));
+            }
             else
                 await Context.Interaction.ModifyResponseAsync(message => message.WithContent("gRPC service returned false."));
         }
         catch (Exception ex) {
             await Console.Out.WriteLineAsync($"{ex}");
+            await Context.Interaction.ModifyResponseAsync(message => message.WithContent("gRPC service failed."));
         }
 
     }

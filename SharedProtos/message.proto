@@ -9,7 +9,7 @@ message InteractionIdProto {
   uint64 thread_id = 2;
 }
 
-enum MessageRollProto {
+enum MessageRoleProto {
     UNSPECIFIED_MESSAGE_ROLE = 0;
     SYSTEM = 1;
     USER = 2;
@@ -17,7 +17,7 @@ enum MessageRollProto {
 }
 
 message MessageContentProto {
-    MessageRollProto message_roll = 1;
+    MessageRoleProto message_role = 1;
     string content = 2;
     uint64 message_id = 3;
     uint64 timestamp = 4;
