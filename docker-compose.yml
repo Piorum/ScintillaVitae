@@ -10,11 +10,3 @@ services:
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    networks:
-      - main
-    ports: 
-      - "5000:80"
-
-networks:
-  main:
-    driver: bridge
