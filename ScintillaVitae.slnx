@@ -1,6 +1,4 @@
 <Solution>
-  <Folder Name="/SharedProtos/">
-    <File Path="message.proto" />
-  </Folder>
+  <Project Path="ScintillaVitae.Database/ScintillaVitae.Database.csproj" />
   <Project Path="ScintillaVitae/ScintillaVitae.csproj" />
 </Solution>

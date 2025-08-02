@@ -4,10 +4,54 @@ services:
       context: .
       dockerfile: ScintillaVitae/Dockerfile
     container_name: discord
+    depends_on:
+      - database
     environment:
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
-      - LMSTUDIO_ENDPOINT=http://host.docker.internal:1234/v1
+      - DATABASE_SERVICE_URL=http://database:5000
       - CHAT_MODEL_NAME=neonmaid-12b
+      - LMSTUDIO_ENDPOINT=http://host.docker.internal:1234/v1
     restart: unless-stopped
+    networks:
+      - main
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    
+  database:
+    build:
+      context: .
+      dockerfile: ScintillaVitae.Database/Dockerfile
+    container_name: database
+    depends_on:
+      - db
+    environment:
+      - ASPNETCORE_HTTP_PORTS=5000
+      - CONNECTION_STRING=Host=db;Database=chat_db;Username=user;Password=password
+    restart: unless-stopped
+    networks:
+      - main
+      - database
+
+  db:
+    image: postgres:17.5-alpine3.22
+    container_name: db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=chat_db
+    networks:
+      - database
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    #ports:
+    #  - "5432:5432"
+
+networks:
+  main:
+    driver: bridge
+  database:
+    driver: bridge
+
+volumes:
+  db_data:

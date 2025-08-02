@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+option csharp_namespace = "ScintillaVitae.Protos.Message";
+
+package scintillavitae.protos.message;
+
+message InteractionIdProto {
+  uint64 server_id = 1;
+  uint64 thread_id = 2;
+}
+
+enum MessageRollProto {
+    UNSPECIFIED_MESSAGE_ROLE = 0;
+    SYSTEM = 1;
+    USER = 2;
+    ASSISTANT = 3;
+}
+
+message MessageContentProto {
+    MessageRollProto message_roll = 1;
+    string content = 2;
+    uint64 message_id = 3;
+    uint64 timestamp = 4;
+}
+
+message MessageProto {
+    InteractionIdProto interaction_id = 1;
+    MessageContentProto message_content = 2;
+}
+
+message MessageHistoryProto {
+    repeated MessageContentProto messages = 1;
+}
+
+service MessageServiceProto {
+    rpc StoreMessage(MessageProto) returns (SuccessProto);
+    rpc GetMessageHistory(InteractionIdProto) returns (MessageHistoryProto);
+}
+
+message SuccessProto {
+    bool success = 1;
+}
