@@ -8,7 +8,9 @@ namespace ScintillaVitae.Discord.Commands;
 public class HelloCmd : ApplicationCommandModule<ApplicationCommandContext>
 {
     [SlashCommand("hello", "Hello!")]
-    public async Task HelloCmdAsync()
+    public async Task HelloCmdAsync(
+        [SlashCommandParameter(Name = "prompt", Description = "Prompt for the AI")] string prompt
+    )
     {
         try
         {
@@ -18,7 +20,7 @@ public class HelloCmd : ApplicationCommandModule<ApplicationCommandContext>
             string? response = null;
             try
             {
-                response = await Chat.CompleteChatAsync([$"{Context.User.Username} says Hello!"]);
+                response = await Chat.CompleteChatAsync([$"{Context.User.Username} says \"{prompt}\""]);
             }
             catch (Exception ex)
             {
