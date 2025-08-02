@@ -4,16 +4,16 @@ using NetCord.Logging;
 using NetCord.Rest;
 using NetCord.Services;
 using NetCord.Services.ApplicationCommands;
-using ScintillaVitae.Discord.Commands;
 
 namespace ScintillaVitae.Discord;
 
-public static class BotBase
+public static class DiscordBot
 {
     private static readonly ApplicationCommandService<ApplicationCommandContext> applicationCommandService;
     private static readonly GatewayClient discordClient;
 
-    static BotBase(){
+    static DiscordBot()
+    {
         var rawToken = Environment.GetEnvironmentVariable("DISCORD_BOT_TOKEN") ?? throw new("Null Bot Token");
         var botToken = new BotToken(rawToken);
         var gatewayConfiguration = new GatewayClientConfiguration()
@@ -26,9 +26,8 @@ public static class BotBase
         discordClient.InteractionCreate += async interaction => await InteractionHandlerAsync(interaction);
 
         applicationCommandService = new();
-
-        applicationCommandService.AddSlashCommand("hello", "Hello!", HelloCmd.HelloCmdAsync);
-        applicationCommandService.AddSlashCommand("goodbye", "Goodbye.", GoodbyeCmd.GoodbyeCmdAsync);
+        
+        applicationCommandService.AddModules(typeof(Program).Assembly);
     }
 
     public static async Task StartAsync(){

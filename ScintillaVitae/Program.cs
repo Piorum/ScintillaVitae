@@ -7,7 +7,7 @@ public class Program
     public static readonly CancellationTokenSource _cts = new();
     public static async Task Main()
     {
-        await BotBase.StartAsync();
+        await DiscordBot.StartAsync();
 
         try
         {
@@ -21,7 +21,7 @@ public class Program
         }
 
         //Cleanup
-        await BotBase.StopAsync();
+        await DiscordBot.StopAsync();
 
         Environment.Exit(0);
     }

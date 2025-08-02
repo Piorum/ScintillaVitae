@@ -7,6 +7,7 @@ services:
     environment:
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
       - LMSTUDIO_ENDPOINT=http://host.docker.internal:1234/v1
+      - CHAT_MODEL_NAME=neonmaid-12b
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway"

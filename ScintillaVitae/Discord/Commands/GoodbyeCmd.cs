@@ -5,9 +5,10 @@ using ScintillaVitae.Lms;
 
 namespace ScintillaVitae.Discord.Commands;
 
-public class GoodbyeCmd
+public class GoodbyeCmd : ApplicationCommandModule<ApplicationCommandContext>
 {
-    public static async Task GoodbyeCmdAsync(ApplicationCommandContext Context)
+    [SlashCommand("goodbye", "Goodbye.")]
+    public async Task GoodbyeCmdAsync()
     {
         try
         {

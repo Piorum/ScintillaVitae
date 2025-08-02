@@ -5,9 +5,10 @@ using ScintillaVitae.Lms;
 
 namespace ScintillaVitae.Discord.Commands;
 
-public class HelloCmd
+public class HelloCmd : ApplicationCommandModule<ApplicationCommandContext>
 {
-    public static async Task HelloCmdAsync(ApplicationCommandContext Context)
+    [SlashCommand("hello", "Hello!")]
+    public async Task HelloCmdAsync()
     {
         try
         {
