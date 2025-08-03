@@ -9,6 +9,8 @@ public static class ClientFactory
     private static readonly Uri baseUri;
     private static readonly ApiKeyCredential credential;
 
+    private static readonly Dictionary<string, ChatClient> clientCache = [];
+
     static ClientFactory()
     {
         baseUri = new Uri(Environment.GetEnvironmentVariable("LMSTUDIO_ENDPOINT") ?? throw new("LMSTUDIO_ENDPOINT is null"));
@@ -17,11 +19,18 @@ public static class ClientFactory
 
     public static ChatClient GetClient(string model)
     {
-        var options = new OpenAIClientOptions { Endpoint = baseUri };
-        var client = new ChatClient(
-            model: model,
-            credential: credential,
-            options: options);
+        clientCache.TryGetValue(model, out var client);
+
+        if (client is null)
+        {
+            var options = new OpenAIClientOptions { Endpoint = baseUri };
+            client = new ChatClient(
+                model: model,
+                credential: credential,
+                options: options);
+            clientCache.Add(model, client);
+        }
+
         return client;
     }
     
