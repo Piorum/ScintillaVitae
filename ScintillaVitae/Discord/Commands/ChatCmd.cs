@@ -1,3 +1,4 @@
+using NetCord;
 using NetCord.Rest;
 using NetCord.Services.ApplicationCommands;
 
@@ -11,21 +12,26 @@ public class ChatCmd : ApplicationCommandModule<ApplicationCommandContext>
     {
         try
         {
-            InteractionCallbackProperties callback = threadType switch
-            {
-                ThreadType.Private => InteractionCallback.DeferredMessage(NetCord.MessageFlags.Ephemeral),
-                _ => InteractionCallback.DeferredMessage()
-            };
-            await Context.Interaction.SendResponseAsync(callback);
-
+            GuildThread? thread = null;
             GuildThreadProperties properties = new("Chat");
-            if (threadType is ThreadType.Public)
-                properties.ChannelType = NetCord.ChannelType.PublicGuildThread;
-            var thread = await Context.Client.Rest.CreateGuildThreadAsync(Context.Channel.Id, properties);
+            switch (threadType)
+            {
+                case ThreadType.Public:
+                    await Context.Interaction.SendResponseAsync(InteractionCallback.DeferredMessage());
+
+                    properties.ChannelType = ChannelType.PublicGuildThread;
+                    break;
+
+                case ThreadType.Private:
+                    await Context.Interaction.SendResponseAsync(InteractionCallback.DeferredMessage(MessageFlags.Ephemeral));
+                    break;
+            }
+
+            thread = await Context.Client.Rest.CreateGuildThreadAsync(Context.Channel.Id, properties);
 
             DiscordBot.MonitoredThreads.Add(thread.Id);
-
             await Context.Interaction.ModifyResponseAsync(message => message.WithContent($"New chat started. <#{thread.Id}>"));
+
         }
         catch (Exception ex)
         {

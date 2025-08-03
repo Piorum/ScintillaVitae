@@ -8,6 +8,7 @@ using NetCord.Services.ApplicationCommands;
 using OpenAI.Chat;
 using ScintillaVitae.Grpc;
 using ScintillaVitae.Lms;
+using ScintillaVitae.Protos.Message;
 
 namespace ScintillaVitae.Discord;
 
@@ -30,14 +31,7 @@ public static class DiscordBot
         discordClient = new(botToken, gatewayConfiguration);
 
         discordClient.InteractionCreate += async interaction => await InteractionHandlerAsync(interaction);
-        discordClient.MessageCreate += async message =>
-        {
-            if (MonitoredThreads.Contains(message.ChannelId) && !message.Author.IsBot)
-            {
-                await Respond(message);
-                return;
-            }
-        };
+        discordClient.MessageCreate += async message => await MessageHandlerAsync(message);
 
         applicationCommandService = new();
 
@@ -99,76 +93,55 @@ public static class DiscordBot
         catch { }
     }
 
+    private static async Task MessageHandlerAsync(Message message)
+    {
+        if (MonitoredThreads.Contains(message.ChannelId) && !message.Author.IsBot)
+            await Respond(message);
+    }
+
     private static async Task Respond(Message message)
     {
         var typingState = await message.Channel!.EnterTypingStateAsync();
 
-        var msClient = await GrpcClientFactory.GetMessageServiceClient();
-
-        var serverId = (ulong)message.GuildId!;
-        var threadId = message.ChannelId;
-        var history = await msClient.GetMessageHistoryAsync(new() { ServerId = serverId, ThreadId = threadId });
-
-        List<ChatMessage> messages = [];
-        foreach (var msg in history.Messages)
-        {
-            messages.Add
-            (
-                msg.MessageRole switch
-                {
-                    Protos.Message.MessageRoleProto.Assistant => ChatMessage.CreateAssistantMessage(msg.Content),
-                    Protos.Message.MessageRoleProto.System => ChatMessage.CreateSystemMessage(msg.Content),
-                    _ => ChatMessage.CreateUserMessage(msg.Content),
-                }
-            );
-        }
+        InteractionIdProto interactionId = new() { ServerId = (ulong)message.GuildId!, ThreadId = message.ChannelId };
+        var messages = await Chat.GetChatHistory(interactionId);
 
         messages.Add(ChatMessage.CreateUserMessage(message.Content));
 
         var response = await Chat.CompleteChatAsync([.. messages]);
-
-        var promptStoreSuccess = await msClient.StoreMessageAsync(new()
+        var responsePartials = response.Chunk(2000).Select(x => new string(x)).ToList();
+        var firstFollowupMsg = await discordClient.Rest.SendMessageAsync(message.ChannelId, responsePartials.FirstOrDefault() ?? "Response was empty.");
+        foreach (var partialResponse in responsePartials.Skip(1))
         {
-            InteractionId = new()
-            {
-                ServerId = serverId,
-                ThreadId = threadId
-            },
+            await discordClient.Rest.SendMessageAsync(message.ChannelId, partialResponse);
+        }
+
+        typingState.Dispose();
+
+        await Chat.StoreMessage(new()
+        {
+            InteractionId = interactionId,
             MessageContent = new()
             {
-                MessageRole = Protos.Message.MessageRoleProto.User,
+                MessageRole = MessageRoleProto.User,
                 Content = message.Content,
                 MessageId = message.Id,
                 Timestamp = (ulong)message.CreatedAt.ToUnixTimeSeconds()
             }
         });
-        if (!promptStoreSuccess.Success) await Console.Out.WriteLineAsync($"Failed to store prompt");
 
-        var responsePartials = response.Chunk(2000).Select(x => new string(x)).ToList();
-
-        var firstFollowupMsg = await discordClient.Rest.SendMessageAsync(threadId, responsePartials.FirstOrDefault() ?? "Response was empty.");
-        foreach (var partialResponse in responsePartials.Skip(1))
+        await Chat.StoreMessage(new()
         {
-            await discordClient.Rest.SendMessageAsync(threadId, partialResponse);
-        }
-
-        var responseStoreSuccess = await msClient.StoreMessageAsync(new()
-        {
-            InteractionId = new()
-            {
-                ServerId = serverId,
-                ThreadId = threadId
-            },
+            InteractionId = interactionId,
             MessageContent = new()
             {
-                MessageRole = Protos.Message.MessageRoleProto.Assistant,
+                MessageRole = MessageRoleProto.Assistant,
                 Content = response,
                 MessageId = firstFollowupMsg.Id,
                 Timestamp = (ulong)firstFollowupMsg.CreatedAt.ToUnixTimeSeconds()
             }
         });
-        if (!responseStoreSuccess.Success) await Console.Out.WriteLineAsync($"Failed to store response");
-
-        typingState.Dispose();
     }
+
+    
 }
