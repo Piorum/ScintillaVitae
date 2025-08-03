@@ -125,7 +125,7 @@ public static class DiscordBot
 
         var response = await Chat.CompleteChatAsync([.. messages]);
 
-        msClient.StoreMessage(new()
+        var promptStoreSuccess = await msClient.StoreMessageAsync(new()
         {
             InteractionId = new()
             {
@@ -140,10 +140,11 @@ public static class DiscordBot
                 Timestamp = (ulong)message.CreatedAt.ToUnixTimeSeconds()
             }
         });
+        if (!promptStoreSuccess.Success) await Console.Out.WriteLineAsync($"Failed to store prompt");
 
         var followupMsg = await discordClient.Rest.SendMessageAsync(threadId, response);
 
-        msClient.StoreMessage(new()
+        var responseStoreSuccess = await msClient.StoreMessageAsync(new()
         {
             InteractionId = new()
             {
@@ -158,5 +159,6 @@ public static class DiscordBot
                 Timestamp = (ulong)followupMsg.CreatedAt.ToUnixTimeSeconds()
             }
         });
+        if (!responseStoreSuccess.Success) await Console.Out.WriteLineAsync($"Failed to store response");
     }
 }

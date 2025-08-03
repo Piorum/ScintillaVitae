@@ -7,13 +7,21 @@ public class ChatCmd : ApplicationCommandModule<ApplicationCommandContext>
 {
 
     [SlashCommand("chat", "Starts a chat thread")]
-    public async Task TestCmdAsync()
+    public async Task TestCmdAsync(ThreadType threadType)
     {
         try
         {
-            await Context.Interaction.SendResponseAsync(InteractionCallback.DeferredMessage());
+            InteractionCallbackProperties callback = threadType switch
+            {
+                ThreadType.Private => InteractionCallback.DeferredMessage(NetCord.MessageFlags.Ephemeral),
+                _ => InteractionCallback.DeferredMessage()
+            };
+            await Context.Interaction.SendResponseAsync(callback);
 
-            var thread = await Context.Client.Rest.CreateGuildThreadAsync(Context.Channel.Id, new("Chat"));
+            GuildThreadProperties properties = new("Chat");
+            if (threadType is ThreadType.Public)
+                properties.ChannelType = NetCord.ChannelType.PublicGuildThread;
+            var thread = await Context.Client.Rest.CreateGuildThreadAsync(Context.Channel.Id, properties);
 
             DiscordBot.MonitoredThreads.Add(thread.Id);
 
@@ -25,5 +33,11 @@ public class ChatCmd : ApplicationCommandModule<ApplicationCommandContext>
             await Context.Interaction.ModifyResponseAsync(message => message.WithContent("Exception Occured."));
         }
 
+    }
+
+    public enum ThreadType
+    {
+        Public,
+        Private
     }
 }
