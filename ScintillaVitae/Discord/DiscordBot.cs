@@ -101,6 +101,8 @@ public static class DiscordBot
 
     private static async Task Respond(Message message)
     {
+        var typingState = await message.Channel!.EnterTypingStateAsync();
+
         var msClient = await GrpcClientFactory.GetMessageServiceClient();
 
         var serverId = (ulong)message.GuildId!;
@@ -142,7 +144,13 @@ public static class DiscordBot
         });
         if (!promptStoreSuccess.Success) await Console.Out.WriteLineAsync($"Failed to store prompt");
 
-        var followupMsg = await discordClient.Rest.SendMessageAsync(threadId, response);
+        var responsePartials = response.Chunk(2000).Select(x => new string(x)).ToList();
+
+        var firstFollowupMsg = await discordClient.Rest.SendMessageAsync(threadId, responsePartials.FirstOrDefault() ?? "Response was empty.");
+        foreach (var partialResponse in responsePartials.Skip(1))
+        {
+            await discordClient.Rest.SendMessageAsync(threadId, partialResponse);
+        }
 
         var responseStoreSuccess = await msClient.StoreMessageAsync(new()
         {
@@ -155,10 +163,12 @@ public static class DiscordBot
             {
                 MessageRole = Protos.Message.MessageRoleProto.Assistant,
                 Content = response,
-                MessageId = followupMsg.Id,
-                Timestamp = (ulong)followupMsg.CreatedAt.ToUnixTimeSeconds()
+                MessageId = firstFollowupMsg.Id,
+                Timestamp = (ulong)firstFollowupMsg.CreatedAt.ToUnixTimeSeconds()
             }
         });
         if (!responseStoreSuccess.Success) await Console.Out.WriteLineAsync($"Failed to store response");
+
+        typingState.Dispose();
     }
 }
