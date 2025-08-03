@@ -1,64 +1,61 @@
-using System.Text;
-using NetCord;
 using NetCord.Rest;
 using NetCord.Services.ApplicationCommands;
-using ScintillaVitae.GRPC;
-using ScintillaVitae.Lms;
 
 namespace ScintillaVitae.Discord.Commands;
 
 public class Test : ApplicationCommandModule<ApplicationCommandContext>
 {
 
-    private static ulong count = 0;
-
     [SlashCommand("test", "Test")]
     public async Task TestCmdAsync()
     {
-        try {
-            //await Context.Interaction.SendResponseAsync(InteractionCallback.DeferredMessage(MessageFlags.Ephemeral));
+        try
+        {
             await Context.Interaction.SendResponseAsync(InteractionCallback.DeferredMessage());
 
-            var messageServiceClient = await GrpcClientFactory.GetMessageServiceClient();
+            var thread = await Context.Client.Rest.CreateGuildThreadAsync(Context.Channel.Id, new("Chat"));
+            await thread.SendMessageAsync(new() { Content = "## [Start of the Chat]" });
 
-            var storeResult = await messageServiceClient.StoreMessageAsync(new()
+            DiscordBot.MonitoredThreads.Add(thread.Id);
+
+            await Context.Interaction.ModifyResponseAsync(message => message.WithContent($"New chat started. <#{thread.Id}>"));
+
+            //await Task.Delay(3 * 1000);
+
+            //StringBuilder sb = new();
+            //for (int i = 0; i < 100; i++)
+            //{
+            //    sb.Append("Long Text");
+            //}
+
+            //var followup1 = await Context.Interaction.SendFollowupMessageAsync(new() { Content = "Test Followup Message", AllowedMentions = AllowedMentionsProperties.None });
+            //await Task.Delay(3 * 1000);
+            //await Context.Interaction.ModifyFollowupMessageAsync(followup1.Id, message => message.WithContent("Modified Followup Message"));
+
+            //var messageServiceClient = await GrpcClientFactory.GetMessageServiceClient();
+
+            //var history = await messageServiceClient.GetMessageHistoryAsync(new() { ServerId = 0, ThreadId = 0 });
+
+            /*await Context.Client.Rest.ModifyGuildChannelAsync(0, options =>
             {
-                InteractionId = new()
-                {
-                    ServerId = 0,
-                    ThreadId = 0
-                },
-                MessageContent = new()
-                {
-                    MessageRole = Protos.Message.MessageRoleProto.User,
-                    Content = "Hello World!",
-                    MessageId = count,
-                    Timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-                }
-            });
-            count++;
+                options.Name = "New Name";
+            });*/
 
-            if (storeResult.Success)
+            /*List<string> messages = [];
+            foreach (var message in history.Messages)
             {
-                var result = await messageServiceClient.GetMessageHistoryAsync(new() { ServerId = 0, ThreadId = 0 });
-
-                List<string> messages = [];
-                foreach (var message in result.Messages)
-                {
-                    messages.Add($"{message.MessageId}:{message.MessageRole}:{message.Content}");
-                }
-
-                if (messages.Count > 0)
-                    await Context.Interaction.ModifyResponseAsync(message => message.WithContent(string.Join(" || ",messages)));
-                else
-                    await Context.Interaction.ModifyResponseAsync(message => message.WithContent("Messages was empty."));
+                messages.Add($"{message.MessageId}:{message.MessageRole}:{message.Content}:{message.Timestamp}");
             }
+
+            if (messages.Count > 0)
+                await Context.Interaction.ModifyResponseAsync(message => message.WithContent(string.Join(" || ",messages)));
             else
-                await Context.Interaction.ModifyResponseAsync(message => message.WithContent("gRPC service returned false."));
+                await Context.Interaction.ModifyResponseAsync(message => message.WithContent("Messages was empty."));*/
         }
-        catch (Exception ex) {
+        catch (Exception ex)
+        {
             await Console.Out.WriteLineAsync($"{ex}");
-            await Context.Interaction.ModifyResponseAsync(message => message.WithContent("gRPC service failed."));
+            await Context.Interaction.ModifyResponseAsync(message => message.WithContent("Exception Occured."));
         }
 
     }

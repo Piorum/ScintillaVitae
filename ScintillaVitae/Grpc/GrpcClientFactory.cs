@@ -1,7 +1,7 @@
 using ScintillaVitae.Protos.Message;
 using Grpc.Net.Client;
 
-namespace ScintillaVitae.GRPC;
+namespace ScintillaVitae.Grpc;
 
 public static class GrpcClientFactory{
 
