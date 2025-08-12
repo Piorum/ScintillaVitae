@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Grpc.AspNetCore" Version="2.64.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.7">
+    <PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.8">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
@@ -17,7 +17,7 @@
 
   <ItemGroup>
     <Protobuf Include="..\SharedProtos\message.proto" GrpcServices="Server">
-      <Link>Protos\Message.proto</Link>
+      <Link>SharedProtos\message.proto</Link>
     </Protobuf>
   </ItemGroup>
 

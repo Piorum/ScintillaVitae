@@ -9,7 +9,7 @@ services:
     environment:
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
       - DATABASE_SERVICE_URL=http://database:5000
-      - CHAT_MODEL_NAME=neonmaid-12b
+      - CHAT_MODEL_NAME=openai/gpt-oss-20b
       - LMSTUDIO_ENDPOINT=http://host.docker.internal:1234/v1
     restart: unless-stopped
     networks:

@@ -5,9 +5,7 @@ using NetCord.Logging;
 using NetCord.Rest;
 using NetCord.Services;
 using NetCord.Services.ApplicationCommands;
-using OpenAI.Chat;
 using ScintillaVitae.Grpc;
-using ScintillaVitae.Lms;
 using ScintillaVitae.Protos.Message;
 
 namespace ScintillaVitae.Discord;
@@ -103,44 +101,9 @@ public static class DiscordBot
     {
         var typingState = await message.Channel!.EnterTypingStateAsync();
 
-        InteractionIdProto interactionId = new() { ServerId = (ulong)message.GuildId!, ThreadId = message.ChannelId };
-        var messages = await Chat.GetChatHistory(interactionId);
-
-        messages.Add(ChatMessage.CreateUserMessage(message.Content));
-
-        var response = await Chat.CompleteChatAsync([.. messages]);
-        var responsePartials = response.Chunk(2000).Select(x => new string(x)).ToList();
-        var firstFollowupMsg = await discordClient.Rest.SendMessageAsync(message.ChannelId, responsePartials.FirstOrDefault() ?? "Response was empty.");
-        foreach (var partialResponse in responsePartials.Skip(1))
-        {
-            await discordClient.Rest.SendMessageAsync(message.ChannelId, partialResponse);
-        }
+        await discordClient.Rest.SendMessageAsync(message.ChannelId, "Null");
 
         typingState.Dispose();
-
-        await Chat.StoreMessage(new()
-        {
-            InteractionId = interactionId,
-            MessageContent = new()
-            {
-                MessageRole = MessageRoleProto.User,
-                Content = message.Content,
-                MessageId = message.Id,
-                Timestamp = (ulong)message.CreatedAt.ToUnixTimeSeconds()
-            }
-        });
-
-        await Chat.StoreMessage(new()
-        {
-            InteractionId = interactionId,
-            MessageContent = new()
-            {
-                MessageRole = MessageRoleProto.Assistant,
-                Content = response,
-                MessageId = firstFollowupMsg.Id,
-                Timestamp = (ulong)firstFollowupMsg.CreatedAt.ToUnixTimeSeconds()
-            }
-        });
     }
 
     
